@@ -1,0 +1,59 @@
+name: chocolatine
+
+on:
+  push:
+  pull_request:
+    branches-ignore:
+      - 'ga-ignore-*'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check_branch_name
+        uses: actions/checkout@v2
+      - run: echo name is $GITHUB_REF
+
+  check_coding_style:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/epitech/coding-style-checker:latest
+    steps:
+      - name: check_coding_style
+        uses: actions/checkout@v3
+      - run:
+          check.sh $(pwd) $(pwd)
+          cat coding-style-reports.log
+          if [[ -s $coding-style-reports.log ]]
+          then
+            exit 0
+          else
+            i=1
+            while read _r line
+            do
+            tab=( ${line//:/} )
+            echo "::error::file=${tab[0]}, line=${tab[1]}, ::${tab[2]} coding style error:${tab[0]}#L${tab[1]}"
+              ((i++))
+              done < "coding-style-reports.log"
+            exit 1
+          fi
+
+  check_program_compilation:
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    steps:
+      - name: check_program_compilation
+        uses: actions/checkout@v2
+      - run: make
+      - run: make clean
+
+  check_unit:
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    steps:
+      - name: run_tests
+        uses: actions/checkout@v2
+      - run: make tests_run
+
